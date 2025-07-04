@@ -13,6 +13,12 @@ from langchain.memory import ConversationBufferMemory
 # 📦 Load environment variables
 load_dotenv()
 
+# 🔗 Azure credentials
+deployment_name = os.getenv("DEPLOYMENT_NAME")
+api_key = os.getenv("AZURE_OPENAI_API_KEY")
+api_base = os.getenv("AZURE_OPENAI_END_POINT")
+api_version = os.getenv("API_VERSION")
+
 # 1. Load and split document
 loader = PyPDFLoader("rabbits.pdf")
 pages = loader.load()
@@ -56,12 +62,13 @@ if "memory" not in st.session_state:
         return_messages=True
     )
 
-# 7. Conversational Retrieval Chain
+# 7. Conversational Retrieval Chain (with source documents)
 qa_chain = ConversationalRetrievalChain.from_llm(
     llm,
     retriever=vectordb.as_retriever(),
     memory=st.session_state.memory,
-    combine_docs_chain_kwargs={"prompt": QA_CHAIN_PROMPT}
+    combine_docs_chain_kwargs={"prompt": QA_CHAIN_PROMPT},
+    return_source_documents=True  # ✅ Required for showing sources
 )
 
 # 8. Streamlit UI
@@ -75,11 +82,13 @@ if query:
     st.markdown("### 🤖 Answer")
     st.write(result["answer"])
 
-    with st.expander("📚 Sources used"):
-        for doc in result["source_documents"]:
-            st.write(doc.page_content[:300] + "...")
+    # Safely show sources if available
+    if "source_documents" in result:
+        with st.expander("📚 Sources used"):
+            for doc in result["source_documents"]:
+                st.write(doc.page_content[:300] + "...")
 
-# Show chat history
+# Optional: Show chat history
 with st.expander("💬 Chat History"):
     for msg in st.session_state.memory.chat_memory.messages:
         st.write(f"**{msg.type.capitalize()}**: {msg.content}")
