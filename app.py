@@ -10,7 +10,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.memory import ConversationBufferMemory
 
-# 📦 Load environment variables
+# Load environment variables
 load_dotenv()
 
 # 1. Load and split document
@@ -37,7 +37,8 @@ template = """Use the following pieces of context to answer the question at the 
 If you don't know the answer, just say that you don't know, don't try to make up an answer. 
 Use three sentences maximum. Keep the answer as concise as possible. Always say "thanks for asking!" 
 at the end of the answer. 
-{context}
+{chat_history}
+Context: {context}
 Question: {question}
 Helpful Answer:"""
 QA_CHAIN_PROMPT = PromptTemplate.from_template(template)
@@ -69,10 +70,7 @@ qa_chain = ConversationalRetrievalChain.from_llm(
         "prompt": QA_CHAIN_PROMPT, 
         "output_key": "answer"
     },
-    # output_key="answer",
-    return_source_documents=True,
-    # input_key="question",
-    # memory_key="chat_history"
+    return_source_documents=True
 )
 
 # 8. Streamlit UI
