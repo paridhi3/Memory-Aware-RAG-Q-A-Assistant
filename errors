@@ -1,10 +1,40 @@
-KeyError: 'source_documents'
+ValueError: Got multiple output keys: dict_keys(['answer', 'source_documents']), cannot determine which to store in memory. Please set the 'output_key' explicitly.
 
 File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\exec_code.py", line 128, in exec_func_with_error_handling
     result = func()
 File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\script_runner.py", line 669, in code_to_exec
     exec(code, module.__dict__)  # noqa: S102
     ~~~~^^^^^^^^^^^^^^^^^^^^^^^
-File "C:\Users\Public\GroupB\Memory RAG Chatbot\app.py", line 79, in <module>
-    for doc in result["source_documents"]:
-               ~~~~~~^^^^^^^^^^^^^^^^^^^^
+File "C:\Users\Public\GroupB\Memory RAG Chatbot\app.py", line 81, in <module>
+    result = qa_chain({"question": query})
+File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\langchain_core\_api\deprecation.py", line 189, in warning_emitting_wrapper
+    return wrapped(*args, **kwargs)
+File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\langchain\chains\base.py", line 386, in __call__
+    return self.invoke(
+           ~~~~~~~~~~~^
+        inputs,
+        ^^^^^^^
+    ...<2 lines>...
+        include_run_info=include_run_info,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\langchain\chains\base.py", line 167, in invoke
+    raise e
+File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\langchain\chains\base.py", line 162, in invoke
+    final_outputs: dict[str, Any] = self.prep_outputs(
+                                    ~~~~~~~~~~~~~~~~~^
+        inputs, outputs, return_only_outputs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\langchain\chains\base.py", line 463, in prep_outputs
+    self.memory.save_context(inputs, outputs)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\langchain\memory\chat_memory.py", line 72, in save_context
+    input_str, output_str = self._get_input_output(inputs, outputs)
+                            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\langchain\memory\chat_memory.py", line 61, in _get_input_output
+    raise ValueError(
+    ...<3 lines>...
+    )
