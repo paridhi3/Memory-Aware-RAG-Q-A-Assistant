@@ -62,20 +62,14 @@ if "memory" not in st.session_state:
         return_messages=True
     )
 
-# 7. Conversational Retrieval Chain (with source documents)
-# qa_chain = ConversationalRetrievalChain.from_llm(
-#     llm,
-#     retriever=vectordb.as_retriever(),
-#     memory=st.session_state.memory,
-#     combine_docs_chain_kwargs={"prompt": QA_CHAIN_PROMPT},
-#     return_source_documents=True,
-#     output_key="answer"
-# )
-
+# 7. Conversational Retrieval Chain (with prompt and sources)
 qa_chain = ConversationalRetrievalChain.from_llm(
     llm,
     retriever=vectordb.as_retriever(),
-    memory=st.session_state.memory
+    memory=st.session_state.memory,
+    combine_docs_chain_kwargs={"prompt": QA_CHAIN_PROMPT, "output_key": "answer"},
+    return_source_documents=True,
+    output_key="answer"
 )
 
 # 8. Streamlit UI
@@ -84,9 +78,8 @@ st.title("🐰 Ask Me Anything About Rabbits!")
 
 # Reset button
 if st.button("🔄 Reset Chat", help="Reset Chat"):
+    st.session_state.memory.clear()
     st.session_state.chat_history = []
-    st.session_state.pop("pending_input", None)
-    memory.clear()
     st.rerun()
 
 # Chat input
@@ -100,15 +93,15 @@ if query:
     st.markdown("### 🤖 Answer")
     st.write(result["answer"])
 
-    # Safely show sources if available
+    # Show sources if available
     if "source_documents" in result:
         with st.expander("📚 Sources used"):
             for doc in result["source_documents"]:
                 st.write(doc.page_content[:300] + "...")
 
-    # Save chat history
-    st.session_state.chat_history.append({"role": "user", "content": user_input})
-    st.session_state.chat_history.append({"role": "assistant", "content": response["output"]})
+    # Save to chat history
+    st.session_state.chat_history.append({"role": "user", "content": query})
+    st.session_state.chat_history.append({"role": "assistant", "content": result["answer"]})
 
 # Display chat history
 for message in st.session_state.chat_history:
