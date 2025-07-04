@@ -13,12 +13,6 @@ from langchain.memory import ConversationBufferMemory
 # 📦 Load environment variables
 load_dotenv()
 
-# 🔗 Azure credentials
-deployment_name = os.getenv("DEPLOYMENT_NAME")
-api_key = os.getenv("AZURE_OPENAI_API_KEY")
-api_base = os.getenv("AZURE_OPENAI_END_POINT")
-api_version = os.getenv("API_VERSION")
-
 # 1. Load and split document
 loader = PyPDFLoader("rabbits.pdf")
 pages = loader.load()
@@ -58,18 +52,27 @@ llm = AzureChatOpenAI(
 # 6. Memory (with Streamlit session state)
 if "memory" not in st.session_state:
     st.session_state.memory = ConversationBufferMemory(
-        memory_key="chat_history",
+        memory_key="chat_history", 
+        input_key="question", 
+        output_key="answer", 
         return_messages=True
     )
+
+memory = st.session_state.memory
 
 # 7. Conversational Retrieval Chain (with prompt and sources)
 qa_chain = ConversationalRetrievalChain.from_llm(
     llm,
     retriever=vectordb.as_retriever(),
-    memory=st.session_state.memory,
-    combine_docs_chain_kwargs={"prompt": QA_CHAIN_PROMPT, "output_key": "answer"},
+    memory=memory,
+    combine_docs_chain_kwargs={
+        "prompt": QA_CHAIN_PROMPT, 
+        "output_key": "answer"
+    },
+    # output_key="answer",
     return_source_documents=True,
-    output_key="answer"
+    # input_key="question",
+    # memory_key="chat_history"
 )
 
 # 8. Streamlit UI
@@ -86,21 +89,19 @@ if st.button("🔄 Reset Chat", help="Reset Chat"):
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-query = st.text_input("Type your question:")
+user_input = st.chat_input("Type your question:")
 
-if query:
-    result = qa_chain({"question": query})
-    st.markdown("### 🤖 Answer")
-    st.write(result["answer"])
+if user_input:
+    result = qa_chain({"question": user_input})
 
     # Show sources if available
     if "source_documents" in result:
-        with st.expander("📚 Sources used"):
+        with st.expander("Sources used"):
             for doc in result["source_documents"]:
                 st.write(doc.page_content[:300] + "...")
 
     # Save to chat history
-    st.session_state.chat_history.append({"role": "user", "content": query})
+    st.session_state.chat_history.append({"role": "user", "content": user_input})
     st.session_state.chat_history.append({"role": "assistant", "content": result["answer"]})
 
 # Display chat history
