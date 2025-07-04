@@ -63,17 +63,35 @@ if "memory" not in st.session_state:
     )
 
 # 7. Conversational Retrieval Chain (with source documents)
+# qa_chain = ConversationalRetrievalChain.from_llm(
+#     llm,
+#     retriever=vectordb.as_retriever(),
+#     memory=st.session_state.memory,
+#     combine_docs_chain_kwargs={"prompt": QA_CHAIN_PROMPT},
+#     return_source_documents=True,
+#     output_key="answer"
+# )
+
 qa_chain = ConversationalRetrievalChain.from_llm(
     llm,
     retriever=vectordb.as_retriever(),
-    memory=st.session_state.memory,
-    combine_docs_chain_kwargs={"prompt": QA_CHAIN_PROMPT},
-    return_source_documents=True  # ✅ Required for showing sources
+    memory=st.session_state.memory
 )
 
 # 8. Streamlit UI
 st.set_page_config(page_title="Rabbit Q&A Bot", layout="centered")
 st.title("🐰 Ask Me Anything About Rabbits!")
+
+# Reset button
+if st.button("🔄 Reset Chat", help="Reset Chat"):
+    st.session_state.chat_history = []
+    st.session_state.pop("pending_input", None)
+    memory.clear()
+    st.rerun()
+
+# Chat input
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
 query = st.text_input("Type your question:")
 
@@ -88,7 +106,11 @@ if query:
             for doc in result["source_documents"]:
                 st.write(doc.page_content[:300] + "...")
 
-# Optional: Show chat history
-with st.expander("💬 Chat History"):
-    for msg in st.session_state.memory.chat_memory.messages:
-        st.write(f"**{msg.type.capitalize()}**: {msg.content}")
+    # Save chat history
+    st.session_state.chat_history.append({"role": "user", "content": user_input})
+    st.session_state.chat_history.append({"role": "assistant", "content": response["output"]})
+
+# Display chat history
+for message in st.session_state.chat_history:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
