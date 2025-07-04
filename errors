@@ -5,7 +5,7 @@ File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\streamli
 File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\script_runner.py", line 669, in code_to_exec
     exec(code, module.__dict__)  # noqa: S102
     ~~~~^^^^^^^^^^^^^^^^^^^^^^^
-File "C:\Users\Public\GroupB\Memory RAG Chatbot\app.py", line 81, in <module>
+File "C:\Users\Public\GroupB\Memory RAG Chatbot\app.py", line 86, in <module>
     result = qa_chain({"question": query})
 File "C:\Users\Public\GroupB\Memory RAG Chatbot\.venv\Lib\site-packages\langchain_core\_api\deprecation.py", line 189, in warning_emitting_wrapper
     return wrapped(*args, **kwargs)
