@@ -21,14 +21,14 @@ disk_cache = {}      # dict-based persistent cache
 
 # 🚀 Generate response with history
 def generate_response_with_history(prompt, history):
-    input_text = " ".join(history + [prompt])
+    history_texts = [str(h) for h in history]
+    input_text = " ".join(history_texts + [prompt])
     inputs = tokenizer(input_text, return_tensors="pt")
     outputs = model.generate(**inputs, max_length=100)
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-
 # 🔍 Semantic similarity search
-def semantic_search(query, threshold=0.8):
+def semantic_search(query, threshold=0.7):
     if len(semantic_cache) == 0:
         return None
 
@@ -38,7 +38,6 @@ def semantic_search(query, threshold=0.8):
     if D[0][0] < (1 - threshold):  # similarity check
         return semantic_cache[I[0][0]]
     return None
-
 
 # ⚡ Cache + Generation Pipeline
 def get_response(prompt):
