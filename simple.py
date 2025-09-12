@@ -39,9 +39,20 @@ disk_cache = Cache("./llm_cache")
 # 🔧 Response generation
 # ----------------------------
 def generate_response(prompt: str) -> str:
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."}
+    ]
+
+    # Add past history
+    for msg in st.session_state.chat_history:
+        messages.append({"role": msg["role"], "content": msg["content"]})
+
+    # Add the new user message
+    messages.append({"role": "user", "content": prompt})
+
     response = client.chat.completions.create(
         model=MODEL_NAME,
-        messages=[{"role": "user", "content": prompt}],
+        messages=messages,
         max_tokens=150,
         temperature=0.7
     )
