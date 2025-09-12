@@ -117,6 +117,15 @@ def cached_gpt_call(prompt: str, threshold=0.80) -> tuple[str, str, float]:
     elapsed = time.time() - start
     return response, "Cache Miss ❌ (Generated)", elapsed
 
+def clear_all_cache():
+    # Clear FAISS index
+    global faiss_index, semantic_cache
+    faiss_index.reset()
+    semantic_cache = []
+
+    # Clear disk cache
+    disk_cache.clear()
+
 
 # ----------------------------
 # 🔧 Streamlit Chat UI
@@ -150,6 +159,10 @@ if user_input:
 for message in st.session_state.chat_history:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+
+if st.button("🗑️ Clear All Cache"):
+    clear_all_cache()
+    st.success("All caches cleared ✅")
 
 
 # import streamlit as st
