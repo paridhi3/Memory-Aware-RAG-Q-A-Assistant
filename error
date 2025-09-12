@@ -1,14 +1,23 @@
-TypeError: sequence item 0: expected str instance, dict found
+ValueError: Input length of input_ids is 321, but `max_length` is set to 100. This can lead to unexpected behavior. You should consider increasing `max_length` or, better yet, setting `max_new_tokens`.
 
 File "C:\Users\703417007_agarwal\Desktop\cache\venv\Lib\site-packages\streamlit\runtime\scriptrunner\exec_code.py", line 128, in exec_func_with_error_handling
     result = func()
 File "C:\Users\703417007_agarwal\Desktop\cache\venv\Lib\site-packages\streamlit\runtime\scriptrunner\script_runner.py", line 669, in code_to_exec
     exec(code, module.__dict__)  # noqa: S102
     ~~~~^^^^^^^^^^^^^^^^^^^^^^^
-File "C:\Users\703417007_agarwal\Desktop\cache\simple.py", line 92, in <module>
+File "C:\Users\703417007_agarwal\Desktop\cache\simple.py", line 91, in <module>
     response, source, elapsed = get_response(prompt)
                                 ~~~~~~~~~~~~^^^^^^^^
-File "C:\Users\703417007_agarwal\Desktop\cache\simple.py", line 62, in get_response
+File "C:\Users\703417007_agarwal\Desktop\cache\simple.py", line 61, in get_response
     response = generate_response_with_history(prompt, st.session_state.chat_history)
-File "C:\Users\703417007_agarwal\Desktop\cache\simple.py", line 24, in generate_response_with_history
-    input_text = " ".join(history + [prompt])
+File "C:\Users\703417007_agarwal\Desktop\cache\simple.py", line 27, in generate_response_with_history
+    outputs = model.generate(**inputs, max_length=100)
+File "C:\Users\703417007_agarwal\Desktop\cache\venv\Lib\site-packages\torch\utils\_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+File "C:\Users\703417007_agarwal\Desktop\cache\venv\Lib\site-packages\transformers\generation\utils.py", line 2386, in generate
+    self._validate_generated_length(generation_config, input_ids_length, has_default_max_length)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Users\703417007_agarwal\Desktop\cache\venv\Lib\site-packages\transformers\generation\utils.py", line 1602, in _validate_generated_length
+    raise ValueError(
+    ...<3 lines>...
+    )
