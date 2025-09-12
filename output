@@ -1,36 +1,31 @@
-what is the capital of France?
+Who wrote Harry Potter?
 
-Cache Status: Cache Miss ❌ (Generated)
+Cache Status: Cache Miss ❌
 
-Time Taken: 0.73 sec
+Time Taken: 0.32 sec
 
-The capital of France is Paris.
+Harry Potter was written by J.K. Rowling.
 
-what is the capital of France?
+Who wrote Harry Potter?
 
-Cache Status: Disk Cache Hit ✅
+Cache Status: Cache Miss ❌
 
-Time Taken: 0.02 sec
+Time Taken: 0.36 sec
 
-The capital of France is Paris.
+Harry Potter was written by J.K. Rowling.
 
-my name is paridhi and I live in Delhi. What is the weather in Delhi?
+my name is rahul
 
-Cache Status: Cache Miss ❌ (Generated)
+Cache Status: Cache Miss ❌
 
-Time Taken: 1.19 sec
+Time Taken: 0.28 sec
 
-Hello Paridhi! I don't have real-time access to current weather data. However, you can easily check the latest weather in Delhi by searching "Delhi weather" on Google or using a weather app on your phone.
+Hello, Rahul! How can I assist you today?
 
-As of June, Delhi typically experiences hot summer weather, with daytime temperatures often ranging from 35°C to 45°C (95°F to 113°F), and occasional humidity. Monsoon season usually begins late June or early July, bringing relief and rain.
+what is my name?
 
-For today's exact weather, please check a reliable weather website or app!
+Cache Status: Cache Miss ❌
 
-What is my name?
+Time Taken: 0.27 sec
 
-Cache Status: Cache Miss ❌ (Generated)
-
-Time Taken: 0.54 sec
-
-You haven't told me your name yet, so I don't know it. If you'd like, you can share your name with me!
-
+Your name is Rahul.
