@@ -36,18 +36,12 @@ semantic_cache = []
 disk_cache = Cache("./llm_cache")
 
 # ----------------------------
-# 🔧 Response generation
+# 🔧 Response generation (with history)
 # ----------------------------
-def generate_response(prompt: str) -> str:
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant."}
-    ]
-
-    # Add past history
+def generate_response_with_history(prompt: str) -> str:
+    messages = [{"role": "system", "content": "You are a helpful assistant."}]
     for msg in st.session_state.chat_history:
         messages.append({"role": msg["role"], "content": msg["content"]})
-
-    # Add the new user message
     messages.append({"role": "user", "content": prompt})
 
     response = client.chat.completions.create(
@@ -58,30 +52,36 @@ def generate_response(prompt: str) -> str:
     )
     return response.choices[0].message.content
 
+# ----------------------------
+# 🔧 Cached GPT call (history-aware key)
+# ----------------------------
 def cached_gpt_call(prompt: str, threshold=0.80) -> tuple[str, str, float]:
     start = time.time()
 
+    # Create a cache key that includes history + current prompt
+    cache_key = str(st.session_state.chat_history) + prompt
+
+    # Semantic cache check
     query_embedding = embedding_model.encode(
         prompt, normalize_embeddings=True, convert_to_numpy=True
     ).astype("float32").reshape(1, -1)
 
-    # Semantic cache check
     if len(semantic_cache) > 0:
         D, I = faiss_index.search(query_embedding, k=1)
         if D[0][0] > threshold:
             elapsed = time.time() - start
             return semantic_cache[I[0][0]], f"Semantic Cache Hit ✅ (similarity={D[0][0]:.2f})", elapsed
 
-    # Disk cache check
-    if prompt in disk_cache:
+    # Disk cache check (history-aware)
+    if cache_key in disk_cache:
         elapsed = time.time() - start
-        return disk_cache[prompt], "Disk Cache Hit ✅", elapsed
+        return disk_cache[cache_key], "Disk Cache Hit ✅", elapsed
 
     # Generate new response
-    response = generate_response(prompt)
+    response = generate_response_with_history(prompt)
     faiss_index.add(query_embedding)
     semantic_cache.append(response)
-    disk_cache[prompt] = response
+    disk_cache[cache_key] = response
     elapsed = time.time() - start
     return response, "Cache Miss ❌ (Generated)", elapsed
 
