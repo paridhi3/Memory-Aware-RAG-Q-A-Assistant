@@ -24,7 +24,7 @@ def generate_response_with_history(prompt, history):
     history_texts = [str(h) for h in history]
     input_text = " ".join(history_texts + [prompt])
     inputs = tokenizer(input_text, return_tensors="pt")
-    outputs = model.generate(**inputs, max_length=100)
+    outputs = model.generate(**inputs, max_new_tokens=100)
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 # 🔍 Semantic similarity search
