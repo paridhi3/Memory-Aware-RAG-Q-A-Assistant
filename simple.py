@@ -1,119 +1,105 @@
 import streamlit as st
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
 import time
-from sentence_transformers import SentenceTransformer
-from diskcache import Cache
-from openai import AzureOpenAI
-from dotenv import load_dotenv
-import os
 
-# ----------------------------
-# 🔧 Load environment variables
-# ----------------------------
-load_dotenv()
-API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
-ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-MODEL_NAME = os.getenv("MODEL_NAME")
-API_VERSION = os.getenv("API_VERSION")
+# 🔧 Model setup
+MODEL_NAME = "HuggingFaceTB/SmolLM2-135M"
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
-# ----------------------------
-# 🔧 Azure OpenAI client setup
-# ----------------------------
-client = AzureOpenAI(
-    api_key=API_KEY,
-    api_version=API_VERSION,
-    azure_endpoint=ENDPOINT
-)
+# 🗄️ Cache setup
+dimension = embedder.get_sentence_embedding_dimension()
+faiss_index = faiss.IndexFlatL2(dimension)
+semantic_cache = []  # stores responses
+disk_cache = {}      # dict-based persistent cache
 
-# ----------------------------
-# 🔧 Embedding + FAISS setup
-# ----------------------------
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-embedding_dim = 384
-faiss_index = faiss.IndexFlatIP(embedding_dim)
-semantic_cache = []
-disk_cache = Cache("./llm_cache")
 
-# ----------------------------
-# 🔧 Response generation (with history)
-# ----------------------------
-def generate_response_with_history(prompt: str) -> str:
-    messages = [{"role": "system", "content": "You are a helpful assistant."}]
-    for msg in st.session_state.chat_history:
-        messages.append({"role": msg["role"], "content": msg["content"]})
-    messages.append({"role": "user", "content": prompt})
+# 🚀 Generate response with history
+def generate_response_with_history(prompt, history):
+    input_text = " ".join(history + [prompt])
+    inputs = tokenizer(input_text, return_tensors="pt")
+    outputs = model.generate(**inputs, max_length=100)
+    return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-    response = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=messages,
-        max_tokens=150,
-        temperature=0.7
-    )
-    return response.choices[0].message.content
 
-# ----------------------------
-# 🔧 Cached GPT call (history-aware key)
-# ----------------------------
-def cached_gpt_call(prompt: str, threshold=0.80) -> tuple[str, str, float]:
+# 🔍 Semantic similarity search
+def semantic_search(query, threshold=0.8):
+    if len(semantic_cache) == 0:
+        return None
+
+    query_embedding = embedder.encode([query])
+    D, I = faiss_index.search(np.array(query_embedding).astype("float32"), k=1)
+
+    if D[0][0] < (1 - threshold):  # similarity check
+        return semantic_cache[I[0][0]]
+    return None
+
+
+# ⚡ Cache + Generation Pipeline
+def get_response(prompt):
     start = time.time()
 
-    # Create a cache key that includes history + current prompt
+    # Build cache key with history
     cache_key = str(st.session_state.chat_history) + prompt
 
-    # Semantic cache check
-    query_embedding = embedding_model.encode(
-        prompt, normalize_embeddings=True, convert_to_numpy=True
-    ).astype("float32").reshape(1, -1)
-
-    if len(semantic_cache) > 0:
-        D, I = faiss_index.search(query_embedding, k=1)
-        if D[0][0] > threshold:
-            elapsed = time.time() - start
-            return semantic_cache[I[0][0]], f"Semantic Cache Hit ✅ (similarity={D[0][0]:.2f})", elapsed
-
-    # Disk cache check (history-aware)
+    # 1. Disk cache
     if cache_key in disk_cache:
         elapsed = time.time() - start
-        return disk_cache[cache_key], "Disk Cache Hit ✅", elapsed
+        return disk_cache[cache_key], "Cache Hit ✅ (Disk)", elapsed
 
-    # Generate new response
-    response = generate_response_with_history(prompt)
-    faiss_index.add(query_embedding)
+    # 2. Semantic cache
+    semantic_match = semantic_search(prompt)
+    if semantic_match:
+        elapsed = time.time() - start
+        return semantic_match, "Cache Hit ✅ (Semantic)", elapsed
+
+    # 3. Fresh generation (with or without memory)
+    response = generate_response_with_history(prompt, st.session_state.chat_history)
+
+    # Update caches
+    query_embedding = embedder.encode([prompt])
+    faiss_index.add(np.array([query_embedding]).astype("float32"))
     semantic_cache.append(response)
     disk_cache[cache_key] = response
+
     elapsed = time.time() - start
-    return response, "Cache Miss ❌ (Generated)", elapsed
 
-# ----------------------------
-# 🔧 Streamlit Chat UI
-# ----------------------------
-st.set_page_config(page_title="Semantic Cache Chatbot", layout="centered")
-st.title("💬 Semantic Cache Chatbot")
+    # Decide status
+    if len(st.session_state.chat_history) == 0:
+        status = "Fresh Generation ✨ (No History)"
+    else:
+        status = "Memory 🧠 (History Used)"
 
-# Initialize chat history
+    return response, status, elapsed
+
+
+# 🎨 Streamlit UI
+st.title("🧠 Caching Demo with Memory vs Cache")
+
+# Init session history
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Reset button
-if st.button("🔄 Reset Chat"):
-    st.session_state.chat_history = []
-    st.rerun()
+# User input
+prompt = st.text_input("Enter your prompt:")
 
-# Chat input
-user_input = st.chat_input("Ask me anything:")
+if st.button("Submit") and prompt:
+    response, source, elapsed = get_response(prompt)
 
-if user_input:
-    response, status, elapsed = cached_gpt_call(user_input)
+    # Update chat history
+    st.session_state.chat_history.append(prompt)
 
-    # Save to chat history
-    st.session_state.chat_history.append({"role": "user", "content": user_input})
-    st.session_state.chat_history.append({
-        "role": "assistant",
-        "content": f"**Cache Status:** {status}\n\n**Time Taken:** {elapsed:.2f} sec\n\n{response}"
-    })
+    # Display
+    st.write("### 🤖 Response:")
+    st.success(response)
+    st.info(f"Source: {source} | Time: {elapsed:.2f}s")
 
-# Display chat history
-for message in st.session_state.chat_history:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    # Show history
+    st.write("### 📜 Chat History")
+    for i, msg in enumerate(st.session_state.chat_history, 1):
+        st.write(f"{i}. {msg}")
