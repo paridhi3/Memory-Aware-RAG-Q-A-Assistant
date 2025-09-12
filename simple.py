@@ -83,7 +83,7 @@ def cached_gpt_call(prompt: str, threshold=0.80) -> tuple[str, str, float]:
     semantic_cache.append(response)
     disk_cache[cache_key] = response
     elapsed = time.time() - start
-    return response, "Cache Miss ❌ (Generated)", elapsed
+    return response, "Cache Miss ❌", elapsed
 
 # ----------------------------
 # 🔧 Streamlit Chat UI
